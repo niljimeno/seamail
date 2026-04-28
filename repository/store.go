@@ -21,22 +21,32 @@ func Store(data []byte) error {
 	return err
 }
 
+func isRead(id []byte) bool {
+	_, err := os.Stat(fmt.Sprintf("%s/read/%s", config.DataDirectory, id))
+	return !os.IsNotExist(err)
+}
+
+func markAsRead(id []byte) {
+	os.Create(fmt.Sprintf("%s/read/%s", config.DataDirectory, id))
+}
+
 func Get(id []byte) ([]byte, error) {
 	content, err := os.ReadFile(fmt.Sprintf("%s/mail/%s", config.DataDirectory, id))
 	if err != nil {
 		return nil, err
 	}
 
+	markAsRead(id)
 	return content, nil
 }
 
-func Remove(id []byte) error {
-	err := os.Remove(fmt.Sprintf("%s/%s", config.DataDirectory, id))
-	return err
+func Remove(id []byte) {
+	os.Remove(fmt.Sprintf("%s/mail/%s", config.DataDirectory, id))
+	os.Remove(fmt.Sprintf("%s/read/%s", config.DataDirectory, id))
 }
 
 func List() string {
-	directories, _ := os.ReadDir(config.DataDirectory)
+	directories, _ := os.ReadDir(fmt.Sprintf("%s/mail/", config.DataDirectory))
 	names := make([]string, len(directories))
 
 	for i := range directories {
@@ -54,9 +64,16 @@ func List() string {
 			continue
 		}
 
+		var stateText string
+		if isRead([]byte(name)) {
+			stateText = "[r] "
+		}
+
 		names[i] = fmt.Sprintf(
-			"%s: %s %s",
-			name, reader.Header.Get("From"),
+			"%s: %s%s %s",
+			name,
+			stateText,
+			reader.Header.Get("From"),
 			reader.Header.Get("Subject"),
 		)
 	}

@@ -73,11 +73,11 @@ func loadEnv() error {
 }
 
 func LoadServer() error {
-	if err := loadTLS(); err != nil {
+	if err := loadEnv(); err != nil {
 		return err
 	}
 
-	if err := loadEnv(); err != nil {
+	if err := loadTLS(); err != nil {
 		return err
 	}
 

@@ -43,7 +43,7 @@ func listMail() error {
 	return nil
 }
 
-func getMailContent() error {
+func readMailContent() error {
 	if len(os.Args) < 3 {
 		return models.TooFewArguments
 	}
@@ -97,7 +97,7 @@ func Process(action string) error {
 	case "list":
 		return listMail()
 	case "get":
-		return getMailContent()
+		return readMailContent()
 	case "remove":
 		return removeMail()
 	case "send":

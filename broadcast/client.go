@@ -77,10 +77,7 @@ func handleClient(client *Client) {
 		}
 		client.Connection.Write([]byte(contents))
 	case "remove":
-		err := repository.Remove(client.Args)
-		if err != nil {
-			log.Println("Error: ", err)
-		}
+		repository.Remove(client.Args)
 		client.Connection.Write([]byte("removal ok"))
 	}
 }
