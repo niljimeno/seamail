@@ -1,0 +1,18 @@
+Domain=domain.com
+User=user
+Password=myRawPassword
+
+DataDirectory=/var/mail/seamail
+
+# client stuff
+Terminal=st
+Editor=vi
+IsTerminalEditor=true
+
+# server stuff ( generate with: certbot --nginx certonly -d mail.yourdomain.com )
+fullchain=/etc/letsencrypt/live/mail.domain.com/fullchain.pem
+privkey=/etc/letsencrypt/live/mail.domain.com/privkey.pem
+
+# ports
+AlternativePort=7012
+ClientPort=7013
