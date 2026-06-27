@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/emersion/go-smtp"
+	"github.com/niljimeno/seamail/api"
 	"github.com/niljimeno/seamail/config"
 )
 
@@ -33,6 +34,6 @@ func Listen() {
 	log.Printf("Listening at ports %d, %d and %d\n", 25, config.AlternativePort, config.ClientPort)
 	go s1.ListenAndServe()
 	go s2.ListenAndServe()
-
-	listenClient(7013)
+	go listenClient(7013)
+	api.Run()
 }

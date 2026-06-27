@@ -115,6 +115,7 @@ func (s *Session) recieveData(r io.Reader) error {
 	if !s.validateDomain(host, data) {
 		return smtp.ErrAuthFailed
 	}
+
 	err = repository.Store(data)
 	if err != nil {
 		return err

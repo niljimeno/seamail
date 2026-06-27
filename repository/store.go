@@ -1,19 +1,24 @@
 package repository
 
 import (
+	"encoding/binary"
 	"fmt"
+	"log"
 	"os"
-	"strings"
-	"time"
 
 	"github.com/emersion/go-message/mail"
 	"github.com/niljimeno/seamail/config"
+	"github.com/niljimeno/seamail/models"
 )
 
 func Store(data []byte) error {
-	name := time.Now().UnixMilli()
-	err := os.WriteFile(
-		fmt.Sprintf("%s/mail/%d", config.DataDirectory, name),
+	id, err := Database.CreateMail([]string{"nil"})
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(
+		fmt.Sprintf("%s/mail/%d", config.DataDirectory, id),
 		data,
 		0755,
 	)
@@ -40,43 +45,57 @@ func Get(id []byte) ([]byte, error) {
 	return content, nil
 }
 
-func Remove(id []byte) {
-	os.Remove(fmt.Sprintf("%s/mail/%s", config.DataDirectory, id))
-	os.Remove(fmt.Sprintf("%s/read/%s", config.DataDirectory, id))
-}
-
-func List() string {
-	directories, _ := os.ReadDir(fmt.Sprintf("%s/mail/", config.DataDirectory))
-	names := make([]string, len(directories))
-
-	for i := range directories {
-		name := directories[i].Name()
-		fileDir := fmt.Sprintf("%s/mail/%s", config.DataDirectory, name)
-		fileReader, err := os.Open(fileDir)
-		if err != nil {
-			names[i] = fmt.Sprintf("Error: %v", err)
-			continue
-		}
-
-		reader, err := mail.CreateReader(fileReader)
-		if err != nil {
-			names[i] = fmt.Sprintf("Error: %v", err)
-			continue
-		}
-
-		var stateText string
-		if isRead([]byte(name)) {
-			stateText = "[r] "
-		}
-
-		names[i] = fmt.Sprintf(
-			"%s: %s%s %s",
-			name,
-			stateText,
-			reader.Header.Get("From"),
-			reader.Header.Get("Subject"),
-		)
+func Remove(id int64) error {
+	err := Database.RemoveMail(id, "nil")
+	if err != nil {
+		log.Println("Could not remove mail")
+		return err
 	}
 
-	return strings.Join(names, "\n")
+	os.Remove(fmt.Sprintf("%s/mail/%d", config.DataDirectory, id))
+	return nil
+}
+
+func getMailDetails(m models.Mail) (models.MailDetailed, error) {
+	result := models.MailDetailed{
+		Id:   m.Id,
+		Read: m.Read,
+	}
+
+	fileDir := fmt.Sprintf("%s/mail/%d", config.DataDirectory, m.Id)
+	fileReader, err := os.Open(fileDir)
+	if err != nil {
+		return result, err
+	}
+
+	reader, err := mail.CreateReader(fileReader)
+	if err != nil {
+		return result, err
+	}
+
+	result.Address = reader.Header.Get("From")
+	result.Subject = reader.Header.Get("Subject")
+	return result, err
+}
+
+func ListMail() ([]models.MailDetailed, error) {
+	mail, err := Database.ListMail()
+	if err != nil {
+		log.Println("List mail: Didn't go through the detailed process,", err)
+		return nil, err
+	}
+
+	result := []models.MailDetailed{}
+
+	for _, m := range mail {
+		r, err := getMailDetails(m)
+		if err != nil {
+			log.Println("Error getting mails:", err)
+			continue
+		}
+
+		result = append(result, r)
+	}
+
+	return result, nil
 }

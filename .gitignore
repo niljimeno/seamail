@@ -2,3 +2,4 @@ go.sum
 Makefile
 out
 .env
+my.db

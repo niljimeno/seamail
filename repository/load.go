@@ -10,7 +10,13 @@ import (
 const perms = 0755
 
 func Load() error {
-	err := os.MkdirAll(config.DataDirectory, perms)
+	Database.Path = fmt.Sprintf("%s/my.db", config.DataDirectory)
+	err := Database.Connect()
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(config.DataDirectory, perms)
 	if err != nil {
 		return err
 	}

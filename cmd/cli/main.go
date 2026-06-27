@@ -10,12 +10,14 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Panicln("Not enough arguments!")
+		print("Not enough arguments!")
+		return
 	}
 
 	err := config.LoadClient()
 	if err != nil {
 		log.Panic(err)
+		return
 	}
 
 	action := os.Args[1]
