@@ -113,6 +113,22 @@ func (db *DB) RemoveMail(id int64, reciever string) error {
 	return tx.Commit()
 }
 
+func (db *DB) IsRead(id int64) (bool, error) {
+	var read bool
+
+	err := db.Pool.QueryRow("select read from mail where id = ?", id).Scan(&read)
+	if err != nil {
+		return false, err
+	}
+
+	return read, nil
+}
+
+func (db *DB) MarkAsRead(id int64) error {
+	_, err := db.Pool.Exec("update mail set read = 1 where id = ?", id)
+	return err
+}
+
 func (db *DB) ListMail() ([]models.Mail, error) {
 	rows, err := db.Pool.Query("select * from mail", nil)
 	if err != nil {

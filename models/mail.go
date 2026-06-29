@@ -11,3 +11,16 @@ type MailDetailed struct {
 	Address string `json:"address"`
 	Subject string `json:"subject"`
 }
+
+type MailContent struct {
+	ContentType string `json:"content-type"`
+	Data        string `json:"data"`
+}
+
+type MailFull struct {
+	Id      int64         `json:"id"`
+	Read    bool          `json:"read"`
+	Address string        `json:"address"`
+	Subject string        `json:"subject"`
+	Content []MailContent `json:"content"`
+}

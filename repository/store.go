@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"encoding/binary"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -26,26 +26,7 @@ func Store(data []byte) error {
 	return err
 }
 
-func isRead(id []byte) bool {
-	_, err := os.Stat(fmt.Sprintf("%s/read/%s", config.DataDirectory, id))
-	return !os.IsNotExist(err)
-}
-
-func markAsRead(id []byte) {
-	os.Create(fmt.Sprintf("%s/read/%s", config.DataDirectory, id))
-}
-
-func Get(id []byte) ([]byte, error) {
-	content, err := os.ReadFile(fmt.Sprintf("%s/mail/%s", config.DataDirectory, id))
-	if err != nil {
-		return nil, err
-	}
-
-	markAsRead(id)
-	return content, nil
-}
-
-func Remove(id int64) error {
+func RemoveMail(id int64) error {
 	err := Database.RemoveMail(id, "nil")
 	if err != nil {
 		log.Println("Could not remove mail")
@@ -56,19 +37,28 @@ func Remove(id int64) error {
 	return nil
 }
 
+func getMailReader(id int64) (*mail.Reader, error) {
+	fileDir := fmt.Sprintf("%s/mail/%d", config.DataDirectory, id)
+	fileReader, err := os.Open(fileDir)
+	if err != nil {
+		return nil, err
+	}
+
+	reader, err := mail.CreateReader(fileReader)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader, nil
+}
+
 func getMailDetails(m models.Mail) (models.MailDetailed, error) {
 	result := models.MailDetailed{
 		Id:   m.Id,
 		Read: m.Read,
 	}
 
-	fileDir := fmt.Sprintf("%s/mail/%d", config.DataDirectory, m.Id)
-	fileReader, err := os.Open(fileDir)
-	if err != nil {
-		return result, err
-	}
-
-	reader, err := mail.CreateReader(fileReader)
+	reader, err := getMailReader(m.Id)
 	if err != nil {
 		return result, err
 	}
@@ -76,6 +66,49 @@ func getMailDetails(m models.Mail) (models.MailDetailed, error) {
 	result.Address = reader.Header.Get("From")
 	result.Subject = reader.Header.Get("Subject")
 	return result, err
+}
+
+func ReadMail(id int64) (models.MailFull, error) {
+	result := models.MailFull{
+		Id: id,
+	}
+
+	var err error
+	result.Read, _ = Database.IsRead(id)
+
+	reader, err := getMailReader(id)
+	if err != nil {
+		return result, err
+	}
+
+	result.Address = reader.Header.Get("From")
+	result.Subject = reader.Header.Get("Subject")
+
+	content := []models.MailContent{}
+	var c models.MailContent
+
+	for {
+		p, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+
+		b, err := io.ReadAll(p.Body)
+		if err != nil {
+			continue
+		}
+
+		c = models.MailContent{}
+		c.ContentType = p.Header.Get("Content-Type")
+		c.Data = string(b)
+
+		content = append(content, c)
+	}
+
+	result.Content = content
+	Database.MarkAsRead(id)
+
+	return result, nil
 }
 
 func ListMail() ([]models.MailDetailed, error) {

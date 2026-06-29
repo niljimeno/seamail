@@ -1,16 +1,12 @@
 package broadcast
 
 import (
-	"bufio"
-	"bytes"
 	"crypto/tls"
 	"fmt"
-	"io"
 	"log"
 	"net"
 
 	"github.com/niljimeno/seamail/config"
-	"github.com/niljimeno/seamail/repository"
 )
 
 type Client struct {
@@ -21,6 +17,7 @@ type Client struct {
 }
 
 func handleClient(client *Client) {
+	/* !todo
 	defer client.Connection.Close()
 	io.LimitReader(client.Connection, 256)
 
@@ -77,9 +74,10 @@ func handleClient(client *Client) {
 		}
 		client.Connection.Write([]byte(contents))
 	case "remove":
-		repository.Remove(client.Args)
+		repository.RemoveMail(client.Args)
 		client.Connection.Write([]byte("removal ok"))
 	}
+	*/
 }
 
 func listenClient(port int) {
