@@ -36,8 +36,8 @@ type Session struct {
 	ip   net.IP
 }
 
-// AuthMechanisms returns a slice of available auth mechanisms; only PLAIN is
-// supported in this example.
+// AuthMechanisms returns a slice of available auth mechanisms;
+// only PLAIN is supported.
 func (s *Session) AuthMechanisms() []string {
 	return []string{sasl.Plain}
 }

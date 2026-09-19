@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,8 @@ func Run() {
 /* routes */
 
 func listMail(c *gin.Context) {
+	log.Println("List Mail")
+
 	mail, err := repository.ListMail()
 	if err != nil {
 		c.JSON(400, err)
@@ -33,6 +36,8 @@ func listMail(c *gin.Context) {
 }
 
 func readMail(c *gin.Context) {
+	log.Println("Read Mail")
+
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
@@ -50,6 +55,8 @@ func readMail(c *gin.Context) {
 }
 
 func removeMail(c *gin.Context) {
+	log.Println("Remove Mail")
+
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {

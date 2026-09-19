@@ -48,7 +48,6 @@ func (db *DB) Migrate() error {
 		return err
 	}
 
-	log.Println("Here i go")
 	_, err = db.Pool.Exec("insert into users (name, password) values (?, ?)", "nil", "pass")
 	if err != nil {
 		return err
