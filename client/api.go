@@ -101,6 +101,6 @@ func Process(action string) error {
 	case "remove":
 		return removeMail()
 	case "send":
-		return SendMail()
+		return nil //SendMail()
 	}
 }

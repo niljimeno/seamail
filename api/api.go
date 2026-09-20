@@ -1,10 +1,12 @@
 package api
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/niljimeno/seamail/config"
 	"github.com/niljimeno/seamail/repository"
 )
 
@@ -18,7 +20,7 @@ func Run() {
 	api.GET("/mail/:id", readMail)
 	api.DELETE("/mail/:id", removeMail)
 
-	router.Run(":6000")
+	router.Run(fmt.Sprintf(":%d", config.ClientPort))
 }
 
 /* routes */

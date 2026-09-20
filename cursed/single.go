@@ -49,5 +49,24 @@ func (s *Single) View(m model) string {
 		loadingText := lipgloss.NewStyle().Render("Loading...")
 		return loadingText
 	}
-	return lipgloss.NewStyle().Render("hello")
+	mail := s.Mail
+
+	var subject string
+	if mail.Subject != "" {
+		subject = lipgloss.NewStyle().Render(mail.Subject)
+	}
+	address := lipgloss.NewStyle().Render(mail.Address)
+
+	topBar := lipgloss.JoinHorizontal(lipgloss.Left, subject, address)
+
+	var contentText []string
+	for _, c := range mail.Content {
+		typeText := lipgloss.NewStyle().Foreground(lipgloss.Red).Render(c.ContentType)
+		dataText := lipgloss.NewStyle().Render(c.Data)
+		contentText = append(contentText, lipgloss.JoinVertical(lipgloss.Top, typeText, dataText))
+	}
+
+	textBlock := lipgloss.JoinVertical(lipgloss.Top, contentText...)
+
+	return lipgloss.JoinVertical(lipgloss.Top, topBar, textBlock)
 }

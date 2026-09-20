@@ -2,7 +2,9 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,9 +16,7 @@ import (
 	"github.com/niljimeno/seamail/config"
 )
 
-func SendMail() error {
-	auth := sasl.NewPlainClient("", config.User, config.Password)
-
+func WriteMail() (string, error) {
 	id := fmt.Sprintf("%d", time.Now().UnixNano())
 	msg := []byte("To: \n" +
 		"From: " + fmt.Sprintf("%s@%s\n", config.User, config.Domain) +
@@ -29,24 +29,31 @@ func SendMail() error {
 	os.WriteFile(tmpFileDir, msg, 0755)
 
 	var cmd *exec.Cmd
+	cmd = exec.Command(config.Editor, tmpFileDir)
+	//if config.IsTerminalEditor {
+	//	cmd = exec.Command(config.Terminal, config.Editor, tmpFileDir)
+	//} else {
+	//	cmd = exec.Command(config.Editor, tmpFileDir)
+	//}
+
 	if config.IsTerminalEditor {
-		cmd = exec.Command(config.Terminal, config.Editor, tmpFileDir)
-	} else {
-		cmd = exec.Command(config.Editor, tmpFileDir)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 	}
 
 	err := cmd.Run()
 	if err != nil {
-		return err
+		return "", fmt.Errorf(fmt.Sprintf("using %s which is terminal %s %v : %v - Command: %v", config.Editor, config.Terminal, config.IsTerminalEditor, err, cmd.Path))
 	}
 
-	fmt.Print("Do you want to send the message? [yes/no] ")
-	var response string
-	fmt.Scan(&response)
-	if response != "y" && response != "ye" && response != "yes" {
-		return nil
-	}
+	return id, nil
+}
 
+func SendMail(id string) error {
+	auth := sasl.NewPlainClient("", config.User, config.Password)
+
+	tmpFileDir := fmt.Sprintf("/tmp/mail%s", id)
 	newMsg, err := os.ReadFile(tmpFileDir)
 	if err != nil {
 		return err
@@ -62,17 +69,47 @@ func SendMail() error {
 
 	tos := strings.Split(to, ", ")
 
-	err = smtp.SendMail(
-		fmt.Sprintf("mail.%s:%d", config.Domain, config.AlternativePort),
-		auth,
-		from,
-		tos,
-		bytes.NewReader(newMsg),
-	)
+	host := fmt.Sprintf("mail.%s:%d", config.Domain, config.AlternativePort)
 
+	if !config.Ipv4 {
+		return smtp.SendMail(host, auth, from, tos, bytes.NewReader(newMsg))
+	}
+
+	conn, err := net.Dial("tcp4", host)
+	if err != nil {
+		conn, err = net.Dial("tcp4", fmt.Sprintf("%s:%d", config.Domain, config.AlternativePort))
+		if err != nil {
+			return err
+		}
+	}
+	defer conn.Close()
+
+	c, err := smtp.NewClientStartTLS(conn, &tls.Config{ServerName: "mail." + config.Domain})
 	if err != nil {
 		return err
 	}
+	defer c.Close()
 
-	return nil
+	if err = c.Auth(auth); err != nil {
+		return err
+	}
+	if err = c.Mail(from, nil); err != nil {
+		return err
+	}
+	for _, rcpt := range tos {
+		if err = c.Rcpt(rcpt, nil); err != nil {
+			return err
+		}
+	}
+	w, err := c.Data()
+	if err != nil {
+		return err
+	}
+	if _, err = w.Write(newMsg); err != nil {
+		return err
+	}
+	if err = w.Close(); err != nil {
+		return err
+	}
+	return c.Quit()
 }

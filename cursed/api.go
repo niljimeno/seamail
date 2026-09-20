@@ -1,7 +1,6 @@
 package cursed
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,7 +8,6 @@ import (
 	"encoding/json/v2"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/emersion/go-message/mail"
 	"github.com/niljimeno/seamail/config"
 	"github.com/niljimeno/seamail/models"
 )
@@ -48,8 +46,24 @@ func getMessage(id int) tea.Msg {
 	if err != nil {
 		return err
 	}
+	var mails models.MailFull
+	if err := json.Unmarshal(body, &mails); err != nil {
+		return err
+	}
+	return updateSingle(mails)
+}
 
-	/* format message */
+/*
+	resp, err := http.Get(fmt.Sprintf("%smail/%d", baseUrl(), id))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
 	mr, err := mail.CreateReader(bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -78,3 +92,4 @@ func getMessage(id int) tea.Msg {
 
 	return updateSingle(instance)
 }
+*/

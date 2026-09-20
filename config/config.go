@@ -28,6 +28,7 @@ var privkey string
 
 var AlternativePort int
 var ClientPort int
+var Ipv4 bool
 
 func loadTLS() error {
 	cert, err := tls.LoadX509KeyPair(fullchain, privkey)
@@ -55,8 +56,8 @@ func loadEnv() error {
 
 	DataDirectory = os.Getenv("DataDirectory")
 
-	Terminal = os.Getenv("Terminal")
-	Editor = os.Getenv("Editor")
+	Terminal = os.Getenv("TERMINAL")
+	Editor = os.Getenv("EDITOR")
 
 	fullchain = os.Getenv("fullchain")
 	privkey = os.Getenv("privkey")
@@ -121,10 +122,23 @@ func LoadCursed() error {
 		return err
 	}
 
-	var tomlData struct {
-		Domain  string
-		Port    int
-		AltPort int
+	tomlData := struct {
+		Domain           string
+		Port             int
+		AltPort          int
+		Editor           string
+		Terminal         string
+		IsTerminalEditor bool
+		User             string
+		Password         string
+		Ipv4             bool
+	}{
+		Domain:           "example.com",
+		Editor:           os.Getenv("EDITOR"),
+		Terminal:         os.Getenv("TERMINAL"),
+		IsTerminalEditor: true,
+		User:             "nil",
+		Ipv4:             false,
 	}
 
 	_, err = toml.Decode(string(data), &tomlData)
@@ -135,6 +149,12 @@ func LoadCursed() error {
 	Domain = tomlData.Domain
 	ClientPort = tomlData.Port
 	AlternativePort = tomlData.AltPort
+	Editor = tomlData.Editor
+	IsTerminalEditor = tomlData.IsTerminalEditor
+	Terminal = tomlData.Terminal
+	User = tomlData.User
+	Password = tomlData.Password
+	Ipv4 = tomlData.Ipv4
 
 	if AlternativePort == 0 {
 		AlternativePort = 7012

@@ -34,6 +34,6 @@ func Listen() {
 	log.Printf("Listening at ports %d, %d and %d\n", 25, config.AlternativePort, config.ClientPort)
 	go s1.ListenAndServe()
 	go s2.ListenAndServe()
-	go listenClient(7013)
+	// go listenClient(7013)   // updating to new client
 	api.Run()
 }
