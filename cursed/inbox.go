@@ -11,6 +11,20 @@ type Inbox struct {
 	Current int
 }
 
+func (m model) NewInbox(id int) *Inbox {
+	var current int
+
+	for i, mail := range m.Inbox {
+		if int(mail.Id) == id {
+			current = i
+		}
+	}
+
+	return &Inbox{
+		Current: current,
+	}
+}
+
 func (s *Inbox) Init() tea.Cmd {
 	return getInbox
 }

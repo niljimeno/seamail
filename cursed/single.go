@@ -31,6 +31,11 @@ func (s *Single) getMessage() tea.Msg {
 
 func (s *Single) Update(msg tea.Msg, m model) (model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "backspace":
+			return m.changeScene(m.NewInbox(s.Id))
+		}
 	case updateSingle:
 		s.Loading = false
 		s.Mail = models.MailFull(msg)
