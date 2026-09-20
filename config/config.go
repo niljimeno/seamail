@@ -4,8 +4,10 @@ import (
 	"crypto/tls"
 	"log"
 	"os"
+	"path"
 	"strconv"
 
+	"github.com/BurntSushi/toml"
 	"github.com/joho/godotenv"
 )
 
@@ -88,6 +90,49 @@ func LoadClient() error {
 	if err := loadEnv(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func LoadCursed() error {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return err
+	}
+
+	seamailConfig := path.Join(configDir, "seamail")
+	seamailConfigFile := path.Join(seamailConfig, "config.toml")
+
+	if _, err := os.Stat(seamailConfigFile); err != nil {
+		err = os.MkdirAll(seamailConfig, 0755)
+		if err != nil {
+			return err
+		}
+
+		os.WriteFile(
+			seamailConfigFile,
+			[]byte("domain=\"example.com\"\nport=6000"),
+			0755,
+		)
+	}
+
+	data, err := os.ReadFile(seamailConfigFile)
+	if err != nil {
+		return err
+	}
+
+	var tomlData struct {
+		Domain string
+		Port   int
+	}
+
+	_, err = toml.Decode(string(data), &tomlData)
+	if err != nil {
+		return err
+	}
+
+	Domain = tomlData.Domain
+	ClientPort = tomlData.Port
 
 	return nil
 }
