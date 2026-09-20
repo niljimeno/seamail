@@ -1,15 +1,10 @@
 package cursed
 
 import (
-	"fmt"
-	"io"
 	"log"
-	"net/http"
-
-	"encoding/json/v2"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/niljimeno/seamail/config"
+	"github.com/niljimeno/seamail/models"
 )
 
 func Run() {
@@ -23,6 +18,7 @@ func Run() {
 }
 
 type Scene interface {
+	Init() tea.Cmd
 	Update(tea.Msg, model) (model, tea.Cmd)
 	View(model) string
 }
@@ -30,43 +26,38 @@ type Scene interface {
 type model struct {
 	Loading bool
 	Scene   Scene
-	Inbox   []Mail
+	Inbox   []models.MailDetailed
 }
 
-type Mail struct {
-	Id      int    `json:"id"`
-	Read    bool   `json:"read"`
-	Address string `json:"address"`
-	Subject string `json:"subject"`
+type FullMail struct {
+}
+
+func (m model) changeScene(s Scene) (model, tea.Cmd) {
+	m.Scene = s
+	return m, s.Init()
 }
 
 func (m model) Init() tea.Cmd {
-	return getInbox
+	return m.Scene.Init()
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		}
+
+	case error:
+		panic(msg)
+	}
+
 	return m.Scene.Update(msg, m)
 }
 
 func (m model) View() tea.View {
-	return tea.NewView(m.Scene.View(m))
-}
-
-type updateInbox []Mail
-
-func getInbox() tea.Msg {
-	resp, err := http.Get(fmt.Sprintf("http://%s:%d/api/", config.Domain, config.ClientPort))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	var mails []Mail
-	if err := json.Unmarshal(body, &mails); err != nil {
-		return err
-	}
-	return updateInbox(mails)
+	v := tea.NewView(m.Scene.View(m))
+	v.AltScreen = true
+	return v
 }

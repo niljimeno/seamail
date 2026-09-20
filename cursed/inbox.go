@@ -11,13 +11,14 @@ type Inbox struct {
 	Current int
 }
 
+func (s *Inbox) Init() tea.Cmd {
+	return getInbox
+}
+
 func (s *Inbox) Update(msg tea.Msg, m model) (model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-
 		case "j", "down":
 			s.Current++
 			if s.Current >= len(m.Inbox) {
@@ -35,6 +36,9 @@ func (s *Inbox) Update(msg tea.Msg, m model) (model, tea.Cmd) {
 			return m, nil
 
 		case "enter":
+			if s.Current >= 0 && s.Current < len(m.Inbox) {
+				return m.changeScene(NewSingle(int(m.Inbox[s.Current].Id)))
+			}
 			return m, tea.Quit
 		}
 

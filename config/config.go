@@ -111,7 +111,7 @@ func LoadCursed() error {
 
 		os.WriteFile(
 			seamailConfigFile,
-			[]byte("domain=\"example.com\"\nport=6000"),
+			[]byte("domain=\"example.com\"\nport=7013"),
 			0755,
 		)
 	}
@@ -122,8 +122,9 @@ func LoadCursed() error {
 	}
 
 	var tomlData struct {
-		Domain string
-		Port   int
+		Domain  string
+		Port    int
+		AltPort int
 	}
 
 	_, err = toml.Decode(string(data), &tomlData)
@@ -133,6 +134,11 @@ func LoadCursed() error {
 
 	Domain = tomlData.Domain
 	ClientPort = tomlData.Port
+	AlternativePort = tomlData.AltPort
+
+	if AlternativePort == 0 {
+		AlternativePort = 7012
+	}
 
 	return nil
 }
