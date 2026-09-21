@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/niljimeno/seamail/config"
 )
 
 type Inbox struct {
@@ -66,7 +67,8 @@ func (s *Inbox) Update(msg tea.Msg, m model) (model, tea.Cmd) {
 
 func (s *Inbox) View(m model) string {
 	if m.Loading {
-		loadingText := lipgloss.NewStyle().Render("Loading...")
+		loadingText := lipgloss.NewStyle().
+			Render(fmt.Sprintf("Loading messages from %s...", config.Domain))
 		return loadingText
 	}
 	title := lipgloss.NewStyle().
@@ -95,11 +97,21 @@ func (s *Inbox) View(m model) string {
 			PaddingRight(1).
 			Render(mail.Address)
 
-		read := lipgloss.NewStyle().
-			Foreground(lipgloss.Red).
-			Reverse(selected).
-			PaddingRight(1).
-			Render(fmt.Sprintf("%v", mail.Read))
+		var read string
+		if mail.Read {
+			read = lipgloss.NewStyle().
+				Foreground(lipgloss.Cyan).
+				Reverse(selected).
+				PaddingRight(1).
+				Render("Read")
+		} else {
+			read = lipgloss.NewStyle().
+				Foreground(lipgloss.Red).
+				Reverse(selected).
+				Bold(true).
+				PaddingRight(1).
+				Render("Unread")
+		}
 
 		mailText := lipgloss.JoinHorizontal(lipgloss.Left, subject, address, read)
 		renderedMails = append(

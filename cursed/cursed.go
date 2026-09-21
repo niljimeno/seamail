@@ -48,7 +48,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "i":
-			return m.changeScene(&Write{})
+			return m.changeScene(NewWrite())
 		}
 
 	case error:

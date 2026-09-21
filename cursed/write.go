@@ -14,9 +14,21 @@ import (
 	"github.com/niljimeno/seamail/config"
 )
 
+const (
+	Writing      = 1
+	Sending      = 2
+	Confirmation = 3
+)
+
 type Write struct {
 	MailId string
-	Text   string
+	State  int
+}
+
+func NewWrite() *Write {
+	return &Write{
+		State: Writing,
+	}
 }
 
 func (s *Write) Init() tea.Cmd {
@@ -29,36 +41,56 @@ func (s *Write) Init() tea.Cmd {
 func (s *Write) Update(msg tea.Msg, m model) (model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "q":
-			return m, tea.Quit
-		case "y":
-			err := client.SendMail(s.MailId)
-			if err != nil {
-				return m, func() tea.Msg {
-					return fmt.Errorf("Could not send mail - %v", err)
-				}
-			}
-
+		if s.State == Confirmation {
 			return m.changeScene(m.NewInbox(0))
+		}
+		switch msg.String() {
+		case "y":
+			s.State = Sending
+			return m, s.sendMail
 
 		case "n":
 			return m.changeScene(m.NewInbox(0))
+
 		}
-	case finishMail:
+	case mailSent:
+		s.State = Confirmation
+		return m, nil
 	}
 
 	return m, nil
 }
 
-func (s *Write) View(m model) string {
-	prompt := lipgloss.NewStyle().
-		Render("Do you want to send the message? [yes/no]")
+type mailSent struct{}
 
-	return prompt
+func (s *Write) sendMail() tea.Msg {
+	err := client.SendMail(s.MailId)
+	if err != nil {
+		return fmt.Errorf("Could not send mail - %v", err)
+	}
+
+	return mailSent{}
 }
 
-type finishMail struct{}
+func (s *Write) View(m model) string {
+	switch s.State {
+	case Writing:
+		prompt := lipgloss.NewStyle().
+			Render("Do you want to send the message? [yes/no]")
+		return prompt
+
+	case Sending:
+		return lipgloss.NewStyle().
+			Render(fmt.Sprintf("Sending mail to %s...", config.Domain))
+
+	case Confirmation:
+		prompt := lipgloss.NewStyle().
+			Render("Message sent!")
+		return prompt
+	}
+
+	return ""
+}
 
 func WriteMail() (string, tea.Cmd) {
 	id := fmt.Sprintf("%d", time.Now().UnixNano())
@@ -75,7 +107,7 @@ func WriteMail() (string, tea.Cmd) {
 	return id, tea.ExecProcess(
 		exec.Command(config.Editor, tmpFileDir),
 		func(err error) tea.Msg {
-			return finishMail{}
+			return nil
 		},
 	)
 }

@@ -22,5 +22,6 @@ type MailFull struct {
 	Read    bool          `json:"read"`
 	Address string        `json:"address"`
 	Subject string        `json:"subject"`
+	Date    string        `json:"date"`
 	Content []MailContent `json:"content"`
 }

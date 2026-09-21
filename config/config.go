@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"crypto/tls"
 	"log"
 	"os"
@@ -104,15 +105,42 @@ func LoadCursed() error {
 	seamailConfig := path.Join(configDir, "seamail")
 	seamailConfigFile := path.Join(seamailConfig, "config.toml")
 
+	tomlData := struct {
+		Domain           string
+		Port             int
+		SmtpPort         int
+		Editor           string
+		Terminal         string
+		IsTerminalEditor bool
+		User             string
+		Password         string
+		Ipv4             bool
+	}{
+		Domain:           "example.com",
+		Port:             7013,
+		SmtpPort:         7012,
+		Editor:           os.Getenv("EDITOR"),
+		Terminal:         os.Getenv("TERMINAL"),
+		IsTerminalEditor: true,
+		User:             "nil",
+		Password:         "1234",
+		Ipv4:             false,
+	}
+
 	if _, err := os.Stat(seamailConfigFile); err != nil {
 		err = os.MkdirAll(seamailConfig, 0755)
 		if err != nil {
 			return err
 		}
 
+		var buf bytes.Buffer
+		if err := toml.NewEncoder(&buf).Encode(tomlData); err != nil {
+			panic(err)
+		}
+
 		os.WriteFile(
 			seamailConfigFile,
-			[]byte("domain=\"example.com\"\nport=7013"),
+			buf.Bytes(),
 			0755,
 		)
 	}
@@ -122,25 +150,6 @@ func LoadCursed() error {
 		return err
 	}
 
-	tomlData := struct {
-		Domain           string
-		Port             int
-		AltPort          int
-		Editor           string
-		Terminal         string
-		IsTerminalEditor bool
-		User             string
-		Password         string
-		Ipv4             bool
-	}{
-		Domain:           "example.com",
-		Editor:           os.Getenv("EDITOR"),
-		Terminal:         os.Getenv("TERMINAL"),
-		IsTerminalEditor: true,
-		User:             "nil",
-		Ipv4:             false,
-	}
-
 	_, err = toml.Decode(string(data), &tomlData)
 	if err != nil {
 		return err
@@ -148,7 +157,7 @@ func LoadCursed() error {
 
 	Domain = tomlData.Domain
 	ClientPort = tomlData.Port
-	AlternativePort = tomlData.AltPort
+	AlternativePort = tomlData.SmtpPort
 	Editor = tomlData.Editor
 	IsTerminalEditor = tomlData.IsTerminalEditor
 	Terminal = tomlData.Terminal
