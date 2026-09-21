@@ -16,11 +16,24 @@ type updateInbox []models.MailDetailed
 type updateMessage models.MailFull
 
 func baseUrl() string {
-	return fmt.Sprintf("http://%s:%d/api/", config.Domain, config.ClientPort)
+	return fmt.Sprintf("http://%s:%d/api", config.Domain, config.ClientPort)
+}
+
+func apiCall(route string) (*http.Response, error) {
+	url := fmt.Sprintf("%s/%s", baseUrl(), route)
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Set("AUTH", config.Password)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func getInbox() tea.Msg {
-	resp, err := http.Get(baseUrl())
+	resp, err := apiCall("")
 	if err != nil {
 		return err
 	}
@@ -42,7 +55,7 @@ func getInbox() tea.Msg {
 }
 
 func getMessage(id int) tea.Msg {
-	resp, err := http.Get(fmt.Sprintf("%smail/%d", baseUrl(), id))
+	resp, err := apiCall(fmt.Sprintf("mail/%d", id))
 	if err != nil {
 		return err
 	}
