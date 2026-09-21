@@ -24,6 +24,11 @@ func getInbox() tea.Msg {
 	if err != nil {
 		return err
 	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("recieved response status: %s", resp.Status)
+	}
+
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -52,44 +57,3 @@ func getMessage(id int) tea.Msg {
 	}
 	return updateSingle(mails)
 }
-
-/*
-	resp, err := http.Get(fmt.Sprintf("%smail/%d", baseUrl(), id))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	mr, err := mail.CreateReader(bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-
-	instance := models.MailFull{}
-	instance.Address = mr.Header.Get("from")
-	instance.Subject = mr.Header.Get("subject")
-
-	for {
-		p, err := mr.NextPart()
-		if err == io.EOF {
-			break
-		}
-
-		b, _ := io.ReadAll(p.Body)
-		contentType := p.Header.Get("Content-Type")
-
-		newContent := models.MailContent{
-			ContentType: contentType,
-			Data:        string(b),
-		}
-
-		instance.Content = append(instance.Content, newContent)
-	}
-
-	return updateSingle(instance)
-}
-*/

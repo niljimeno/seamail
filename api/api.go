@@ -13,6 +13,7 @@ import (
 func Run() {
 	router := gin.Default()
 	router.Use(CORSMiddleware())
+	router.Use(AuthMiddleware())
 
 	api := router.Group("/api")
 

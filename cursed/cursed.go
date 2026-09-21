@@ -52,7 +52,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case error:
-		panic(msg)
+		return m.changeScene(NewError(msg))
 	}
 
 	return m.Scene.Update(msg, m)

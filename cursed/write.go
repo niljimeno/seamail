@@ -35,7 +35,9 @@ func (s *Write) Update(msg tea.Msg, m model) (model, tea.Cmd) {
 		case "y":
 			err := client.SendMail(s.MailId)
 			if err != nil {
-				panic(err)
+				return m, func() tea.Msg {
+					return fmt.Errorf("Could not send mail - %v", err)
+				}
 			}
 
 			return m.changeScene(m.NewInbox(0))
